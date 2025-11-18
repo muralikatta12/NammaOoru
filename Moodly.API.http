@@ -1,0 +1,6 @@
+@NammaOoru_HostAddress = http://localhost:5077
+
+GET {{NammaOoru_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
