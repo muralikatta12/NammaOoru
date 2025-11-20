@@ -7,6 +7,10 @@ using NammaOoru.Data;
 using NammaOoru.Services;
 using NammaOoru.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using System.Linq;
 
 namespace NammaOoru.Controllers
 {
@@ -14,18 +18,21 @@ namespace NammaOoru.Controllers
     [Route("reports")]
     public class ReportsController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
-        private readonly ILogger<ReportsController> _logger;
-        private readonly IEmailService _emailService;
+    private readonly ApplicationDbContext _db;
+    private readonly ILogger<ReportsController> _logger;
+    private readonly IEmailService _emailService;
+    private readonly IWebHostEnvironment _env;
 
         public ReportsController(
             ApplicationDbContext db,
             ILogger<ReportsController> logger,
-            IEmailService emailService)
+            IEmailService emailService,
+            IWebHostEnvironment env)
         {
             _db = db;
             _logger = logger;
             _emailService = emailService;
+            _env = env;
         }
 
         [HttpPost]
@@ -84,6 +91,102 @@ namespace NammaOoru.Controllers
             await _db.SaveChangesAsync(ct);
 
             return CreatedAtAction(nameof(GetReportById), new { id = report.Id }, new { report.Id });
+        }
+
+        /// <summary>
+        /// Upload a photo for a report. Accepts multipart/form-data with a single file field named "file".
+        /// Roles: Citizen (only for own reports), Official/Moderator/Admin (for any report)
+        /// </summary>
+        [HttpPost("{id}/photos")]
+        [Authorize(Roles = "Citizen,Moderator,Official,Admin")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadPhoto(int id, [FromForm] NammaOoru.Models.UploadPhotoRequest req)
+        {
+            var file = req?.File;
+            var caption = req?.Caption;
+            var isPrimary = req?.IsPrimary ?? false;
+
+            if (file == null || file.Length == 0)
+                return BadRequest("File is required.");
+
+            // Validate file size (max 5 MB)
+            const long maxFileSize = 5 * 1024 * 1024;
+            if (file.Length > maxFileSize)
+                return BadRequest($"File size exceeds the maximum allowed size of {maxFileSize} bytes.");
+
+            // Validate content type / extension
+            var permitted = new[] { "image/jpeg", "image/png" };
+            if (!permitted.Contains(file.ContentType))
+                return BadRequest("Only JPEG and PNG images are allowed.");
+
+            // Get current user id and role
+            var userIdClaim = User.FindFirst("id")?.Value;
+            var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Unable to determine user from token.");
+            }
+
+            // Find report
+            var report = await _db.Reports.Include(r => r.Photos).FirstOrDefaultAsync(r => r.Id == id);
+            if (report == null) return NotFound($"Report with id {id} not found.");
+
+            // If user is Citizen, ensure they own the report
+            if (string.Equals(roleClaim, "Citizen", StringComparison.OrdinalIgnoreCase) && report.CreatedByUserId != userId)
+            {
+                return Forbid();
+            }
+
+            // Prepare upload folder
+            var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadsDir = Path.Combine(webRoot, "uploads");
+            if (!Directory.Exists(uploadsDir)) Directory.CreateDirectory(uploadsDir);
+
+            var ext = Path.GetExtension(file.FileName);
+            var storedFileName = Guid.NewGuid().ToString("N") + ext;
+            var fullPath = Path.Combine(uploadsDir, storedFileName);
+
+            // Save file
+            await using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // If marked primary, unset other photos as primary
+            if (isPrimary && report.Photos != null)
+            {
+                foreach (var p in report.Photos)
+                    p.IsPrimary = false;
+            }
+
+            var photo = new ReportPhoto
+            {
+                ReportId = report.Id,
+                PhotoUrl = $"/uploads/{storedFileName}",
+                FileName = Path.GetFileName(file.FileName),
+                ContentType = file.ContentType,
+                FileSizeInBytes = file.Length,
+                Caption = caption,
+                UploadedAt = DateTime.UtcNow,
+                IsPrimary = isPrimary || (report.Photos == null || !report.Photos.Any())
+            };
+
+            _db.ReportPhotos.Add(photo);
+            await _db.SaveChangesAsync();
+
+            var response = new ReportPhotoResponse
+            {
+                Id = photo.Id,
+                PhotoUrl = photo.PhotoUrl,
+                FileName = photo.FileName,
+                ContentType = photo.ContentType,
+                FileSizeInBytes = photo.FileSizeInBytes,
+                Caption = photo.Caption,
+                UploadedAt = photo.UploadedAt,
+                IsPrimary = photo.IsPrimary
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("{id}")]
@@ -234,45 +337,38 @@ namespace NammaOoru.Controllers
                     report.ResolvedAt = DateTime.UtcNow;
                 }
 
-                // Save changes to database
+                // Save changes to database (include UpdatedByUserId for audit)
+                report.UpdatedByUserId = userId;
                 _db.Reports.Update(report);
                 await _db.SaveChangesAsync();
 
                 // Queue a notification email to the report creator about status change
-                // The citizen should be notified when their report status changes
                 var citizenEmail = report.CreatedByUser?.Email;
                 var citizenName = report.CreatedByUser?.FirstName ?? "User";
 
                 if (!string.IsNullOrEmpty(citizenEmail))
                 {
-                    // Send email in background (non-blocking) using Task.Run
-                    // This prevents email delays from blocking the API response
-                    _ = Task.Run(async () =>
+                    // Map status integer to readable text
+                    var statusText = req.Status switch
                     {
-                        try
-                        {
-                            // Map status integer to readable text
-                            var statusText = req.Status switch
-                            {
-                                0 => "Submitted",
-                                1 => "In Progress",
-                                2 => "Resolved",
-                                3 => "Closed",
-                                _ => "Updated"
-                            };
+                        0 => "Submitted",
+                        1 => "In Progress",
+                        2 => "Resolved",
+                        3 => "Closed",
+                        _ => "Updated"
+                    };
 
-                            var oldStatusText = oldStatus switch
-                            {
-                                ReportStatus.Submitted => "Submitted",
-                                ReportStatus.InProgress => "In Progress",
-                                ReportStatus.Resolved => "Resolved",
-                                ReportStatus.Closed => "Closed",
-                                _ => "Unknown"
-                            };
+                    var oldStatusText = oldStatus switch
+                    {
+                        ReportStatus.Submitted => "Submitted",
+                        ReportStatus.InProgress => "In Progress",
+                        ReportStatus.Resolved => "Resolved",
+                        ReportStatus.Closed => "Closed",
+                        _ => "Unknown"
+                    };
 
-                            // Create email subject and body
-                            var emailSubject = $"Report #{id} Status Updated";
-                            var emailBody = $@"Hi {citizenName},
+                    var emailSubject = $"Report #{id} Status Updated";
+                    var emailBody = $@"Hi {citizenName},
 
 Your reported problem (Report #{id}: {report.Title}) status has been updated.
 
@@ -284,23 +380,23 @@ We appreciate your report and our team's commitment to resolving it.
 Best regards,
 NammaOoru Team";
 
-                            // Call email service to send notification (this method queues the email)
-                            await _emailService.SendNotificationEmailAsync(
-                                citizenEmail,
-                                citizenName,
-                                emailSubject,
-                                emailBody);
+                    // Enqueue email into EmailQueue table for reliable processing (Phase 2-D will implement the worker)
+                    var queueItem = new NammaOoru.Entities.EmailQueue
+                    {
+                        RecipientEmail = citizenEmail,
+                        RecipientName = citizenName,
+                        Subject = emailSubject,
+                        Body = emailBody,
+                        Attempts = 0,
+                        NextRetry = DateTime.UtcNow,
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow
+                    };
 
-                            _logger.LogInformation(
-                                $"Status change notification email sent to {citizenEmail} for report {id} status change from {oldStatusText} to {statusText}");
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log error but don't throw (background task failure shouldn't crash API)
-                            _logger.LogError(ex,
-                                $"Failed to send notification email to {citizenEmail} for report {id} status update.");
-                        }
-                    });
+                    _db.EmailQueue.Add(queueItem);
+                    await _db.SaveChangesAsync();
+
+                    _logger.LogInformation("Enqueued status change email for report {ReportId} to {Email}", id, citizenEmail);
                 }
 
                 // Return success response

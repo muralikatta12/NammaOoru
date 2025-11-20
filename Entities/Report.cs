@@ -34,6 +34,10 @@ namespace NammaOoru.Entities
         public DateTime? UpdatedAt { get; set; }
         public DateTime? ResolvedAt { get; set; }
 
+    // Audit: who last updated this report (officer/moderator/admin)
+    public int? UpdatedByUserId { get; set; }
+    public User? UpdatedByUser { get; set; }
+
         // Voting & priority
         public int UpvoteCount { get; set; } = 0;
         public int Priority { get; set; } = 2;

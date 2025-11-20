@@ -14,6 +14,7 @@ namespace NammaOoru.Data
         public DbSet<Report> Reports { get; set; }
         public DbSet<ReportPhoto> ReportPhotos { get; set; }
         public DbSet<OtpVerification> OtpVerifications { get; set; }
+    public DbSet<EmailQueue> EmailQueue { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -91,12 +92,12 @@ namespace NammaOoru.Data
 
                 // Relationships: CreatedByUser (required), AssignedToUser (optional)
                 entity.HasOne(e => e.CreatedByUser)
-                    .WithMany() // keep User class minimal; no Reports navigation required
+                    .WithMany(u => u.Reports)
                     .HasForeignKey(e => e.CreatedByUserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.AssignedToUser)
-                    .WithMany()
+                    .WithMany(u => u.AssignedReports)
                     .HasForeignKey(e => e.AssignedToUserId)
                     .OnDelete(DeleteBehavior.SetNull);
 
@@ -135,6 +136,22 @@ namespace NammaOoru.Data
 
                 // Index to quickly load photos by report
                 entity.HasIndex(e => e.ReportId);
+            });
+
+            // ====== EmailQueue configuration ======
+            modelBuilder.Entity<EmailQueue>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RecipientEmail).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.RecipientName).HasMaxLength(255);
+                entity.Property(e => e.Subject).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Body).IsRequired();
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(50).HasDefaultValue("Pending");
+                entity.Property(e => e.Attempts).HasDefaultValue(0);
+                entity.Property(e => e.NextRetry).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.NextRetry);
             });
         }
     }

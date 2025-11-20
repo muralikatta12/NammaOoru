@@ -44,6 +44,9 @@ builder.Services.AddSwaggerGen(c =>
         { securityScheme, new[] { "Bearer" } }
     });
 
+    // Support multipart/form-data file uploads in Swagger
+    c.OperationFilter<NammaOoru.Swagger.FormFileOperationFilter>();
+
     // Enable XML comments
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -119,6 +122,9 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Moodly API v1");
     c.RoutePrefix = string.Empty; // Serve at root
 });
+
+// Serve static files from wwwroot (uploads will be available under /uploads)
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
