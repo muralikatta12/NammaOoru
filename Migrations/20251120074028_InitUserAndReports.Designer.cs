@@ -12,8 +12,8 @@ using NammaOoru.Data;
 namespace NammaOoru.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251117095615_AddReportsAndPhotoss")]
-    partial class AddReportsAndPhotoss
+    [Migration("20251120074028_InitUserAndReports")]
+    partial class InitUserAndReports
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -234,6 +234,10 @@ namespace NammaOoru.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

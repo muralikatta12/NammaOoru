@@ -5107,11 +5107,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\2417663\\OneDrive - Cognizant\\Desktop\\Mood\\NammaOoru\\NammaOoru.csproj",
+      "projectUniqueName": "C:\\Users\\2417663\\OneDrive - Cognizant\\Desktop\\NammaOoru\\NammaOoru\\NammaOoru.csproj",
       "projectName": "NammaOoru",
-      "projectPath": "C:\\Users\\2417663\\OneDrive - Cognizant\\Desktop\\Mood\\NammaOoru\\NammaOoru.csproj",
+      "projectPath": "C:\\Users\\2417663\\OneDrive - Cognizant\\Desktop\\NammaOoru\\NammaOoru\\NammaOoru.csproj",
       "packagesPath": "C:\\Users\\2417663\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\2417663\\OneDrive - Cognizant\\Desktop\\Mood\\NammaOoru\\obj\\",
+      "outputPath": "C:\\Users\\2417663\\OneDrive - Cognizant\\Desktop\\NammaOoru\\NammaOoru\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -149,21 +149,30 @@ namespace NammaOoru.Services
                 _context.OtpVerifications.Add(otpVerification);
                 await _context.SaveChangesAsync();
 
-                // Send OTP email in background (don't wait for it)
+                // ⚠️ DEBUGGING MODE: Send OTP email synchronously (not in background)
+                // This allows you to:
+                // 1. See errors immediately in the response
+                // 2. Use breakpoints in EmailService
+                // 3. Debug SMTP connection issues
+                // 
+                // In production, we'll move this back to Task.Run() so it doesn't block the API response
+                // Send OTP email in background so API response isn't blocked by SMTP delays.
+                // Errors will be logged by EmailService.
                 _ = Task.Run(async () =>
                 {
                     try
                     {
+                        _logger.LogInformation("📧 [Background] Starting OTP email send to {Email}", request.Email);
                         await _emailService.SendOtpEmailAsync(request.Email, otp, user.FirstName);
-                        _logger.LogInformation($"OTP email sent to {request.Email}");
+                        _logger.LogInformation("✅ [Background] OTP email sent successfully to {Email}", request.Email);
                     }
-                    catch (Exception ex)
+                    catch (Exception emailEx)
                     {
-                        _logger.LogError(ex, "Failed to send OTP email to {Email}", request.Email);
+                        _logger.LogError(emailEx, "❌ [Background] Failed to send OTP email to {Email}: {Message}", request.Email, emailEx.Message);
                     }
                 });
 
-                _logger.LogInformation($"OTP sent to {request.Email}");
+                _logger.LogInformation("✅ OTP process completed for {Email}", request.Email);
 
                 return new OtpResponse
                 {
@@ -369,15 +378,24 @@ namespace NammaOoru.Services
             var key = Encoding.ASCII.GetBytes(secretKey);
             var tokenHandler = new JwtSecurityTokenHandler();
 
+            // Use the user's persisted role, default to "Citizen" if not set
+            var role = user.Role ?? "Citizen";
+
+            var claims = new[]
+            {
+                new System.Security.Claims.Claim("id", user.Id.ToString()),
+                new System.Security.Claims.Claim("email", user.Email),
+                new System.Security.Claims.Claim("firstName", user.FirstName),
+                new System.Security.Claims.Claim("lastName", user.LastName),
+                // Include both the ClaimTypes.Role and a plain "role" claim to be compatible
+                // with various claim mappings and frontend checks.
+                new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role),
+                new System.Security.Claims.Claim("role", role)
+            };
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new System.Security.Claims.ClaimsIdentity(new[]
-                {
-                    new System.Security.Claims.Claim("id", user.Id.ToString()),
-                    new System.Security.Claims.Claim("email", user.Email),
-                    new System.Security.Claims.Claim("firstName", user.FirstName),
-                    new System.Security.Claims.Claim("lastName", user.LastName)
-                }),
+                Subject = new System.Security.Claims.ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(24),
                 Issuer = _configuration["Jwt:Issuer"] ?? "MoodlyAPI",
                 Audience = _configuration["Jwt:Audience"] ?? "MoodlyAppUsers",

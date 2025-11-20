@@ -15,6 +15,7 @@ namespace NammaOoru.Entities
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
+        public string Role { get; set; } = "Citizen"; // Roles: Citizen, Official, Moderator, Admin
 
     // Navigation property: OTPs created for this user
     public ICollection<OtpVerification> OtpVerifications { get; set; } = new List<OtpVerification>();

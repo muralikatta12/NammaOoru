@@ -6,13 +6,56 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace NammaOoru.Migrations
 {
     /// <inheritdoc />
-    public partial class AddReportsAndPhotos : Migration
+    public partial class InitUserAndReports : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Note: Users and OtpVerifications already exist in the database.
-            // This migration will only create Reports and ReportPhotos tables.
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsEmailVerified = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValue: new DateTime(2025, 11, 13, 0, 0, 0, 0, DateTimeKind.Utc)),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OtpVerifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    OtpCode = table.Column<string>(type: "nvarchar(6)", maxLength: 6, nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValue: new DateTime(2025, 11, 13, 0, 0, 0, 0, DateTimeKind.Utc))
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OtpVerifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OtpVerifications_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Reports",
                 columns: table => new
@@ -31,7 +74,9 @@ namespace NammaOoru.Migrations
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResolvedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     UpvoteCount = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    Priority = table.Column<int>(type: "int", nullable: false, defaultValue: 2)
+                    Priority = table.Column<int>(type: "int", nullable: false, defaultValue: 2),
+                    UserId = table.Column<int>(type: "int", nullable: true),
+                    UserId1 = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,7 +93,16 @@ namespace NammaOoru.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    // No extra shadow FKs
+                    table.ForeignKey(
+                        name: "FK_Reports_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Reports_Users_UserId1",
+                        column: x => x.UserId1,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -77,6 +131,11 @@ namespace NammaOoru.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OtpVerifications_UserId",
+                table: "OtpVerifications",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ReportPhotos_ReportId",
@@ -108,20 +167,37 @@ namespace NammaOoru.Migrations
                 table: "Reports",
                 column: "Status");
 
+            migrationBuilder.CreateIndex(
+                name: "IX_Reports_UserId",
+                table: "Reports",
+                column: "UserId");
 
+            migrationBuilder.CreateIndex(
+                name: "IX_Reports_UserId1",
+                table: "Reports",
+                column: "UserId1");
 
-            // Users table and its indexes already exist in the target database; skip creating index here.
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Only drop tables created by this migration
+            migrationBuilder.DropTable(
+                name: "OtpVerifications");
+
             migrationBuilder.DropTable(
                 name: "ReportPhotos");
 
             migrationBuilder.DropTable(
                 name: "Reports");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

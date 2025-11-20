@@ -61,6 +61,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
+
+builder.Services.AddScoped<IAuthService,AuthService>();
+// Note: IReportService registration is postponed until we verify type resolution in service layer
 // Add Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
@@ -108,15 +111,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
+// Enable Swagger and Swagger UI unconditionally for local testing.
+// In production you might want to restrict this to Development only.
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Moodly API v1");
-        c.RoutePrefix = string.Empty; // Serve at root
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Moodly API v1");
+    c.RoutePrefix = string.Empty; // Serve at root
+});
 
 app.UseHttpsRedirection();
 
