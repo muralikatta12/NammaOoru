@@ -1,0 +1,47 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-success text-white text-center py-4">
+          <h2 class="mb-0"><i class="bi bi-megaphone me-2"></i>Report a Problem</h2>
+        </div>
+        <div class="card-body p-5">
+          <form [formGroup]="form" (ngSubmit)="submit()">
+            <div class="row g-4">
+              <div class="col-12">
+                <input class="form-control form-control-lg" formControlName="title" placeholder="Title (e.g., Pothole on MG Road)">
+              </div>
+              <div class="col-12">
+                <textarea class="form-control" rows="5" formControlName="description" placeholder="Describe the issue..."></textarea>
+              </div>
+              <div class="col-md-6">
+                <select class="form-select form-select-lg" formControlName="category">
+                  <option value="">Select Category</option>
+                  <option>Pothole</option>
+                  <option>Garbage</option>
+                  <option>Street Light</option>
+                  <option>Water Leak</option>
+                  <option>Drainage</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <input class="form-control form-control-lg" formControlName="locationAddress" placeholder="Exact location">
+              </div>
+              <div class="col-12">
+                <input type="file" multiple accept="image/*" class="form-control" (change)="onFilesSelected($event)">
+                <small class="text-muted">You can add photos after creating the report too</small>
+              </div>
+              <div class="col-12 text-center">
+                <button type="submit" class="btn btn-success btn-lg px-5" [disabled]="uploading || form.invalid">
+                  <span *ngIf="!uploading">Submit Report</span>
+                  <span *ngIf="uploading">Submitting...</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

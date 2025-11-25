@@ -1,0 +1,55 @@
+<div class="card h-100 shadow-sm hover-shadow border-0 rounded-3 overflow-hidden"
+     [routerLink]="['/reports', report.id]"
+     style="cursor: pointer; transition: all 0.3s ease;">
+  
+  <!-- Primary Photo (if exists) -->
+  <div *ngIf="primaryPhoto" class="position-relative">
+    <img [src]="baseUrl + primaryPhoto.photoUrl"
+         class="card-img-top"
+         style="height: 180px; object-fit: cover;"
+         alt="Report image">
+    <div class="position-absolute top-0 end-0 m-2">
+      <span class="badge bg-dark opacity-75">
+        {{ report.photos.length }} photo{{ report.photos.length > 1 ? 's' : '' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- No photo fallback -->
+  <div *ngIf="!primaryPhoto" class="bg-light d-flex align-items-center justify-content-center"
+       style="height: 180px;">
+    <i class="bi bi-image fs-1 text-muted"></i>
+  </div>
+
+  <div class="card-body d-flex flex-column">
+    <!-- Title -->
+    <h5 class="card-title fw-bold text-dark mb-2">
+      {{ report.title }}
+    </h5>
+
+    <!-- Description (truncated) -->
+    <p class="card-text text-muted small flex-grow-1 mb-3">
+      {{ report.description | slice:0:120 }}{{ report.description.length > 120 ? '...' : '' }}
+    </p>
+
+    <!-- Category & Location -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <span class="badge bg-success fs-6">{{ report.category || 'General' }}</span>
+      <small class="text-muted">
+        <i class="bi bi-geo-alt-fill me-1"></i>
+        {{ report.locationAddress | slice:0:30 }}{{ report.locationAddress.length > 30 ? '...' : '' }}
+      </small>
+    </div>
+
+    <!-- Status Badge + Date -->
+    <div class="d-flex justify-content-between align-items-center mt-auto">
+      <span class="badge fw-semibold px-3 py-2"
+            [class]="statusBadge[report.status]">
+        {{ statusLabels[report.status] }}
+      </span>
+      <small class="text-muted">
+        {{ report.createdAt | date:'shortDate' }}
+      </small>
+    </div>
+  </div>
+</div>

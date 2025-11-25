@@ -1,0 +1,61 @@
+<div class="min-vh-100 d-flex align-items-center" style="background: linear-gradient(135deg, #d4f4dd 0%, #a7f3d0 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-5 col-lg-4">
+        <div class="card border-0 shadow-lg" style="border-radius: 1.5rem; overflow: hidden;">
+          <!-- Header -->
+          <div class="card-header text-center py-5" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <h2 class="text-white mb-0 fw-bold">
+              <i class="bi bi-shield-lock-fill me-3"></i>
+              Welcome Back
+            </h2>
+            <p class="text-white opacity-90 mt-2">Login to report civic issues</p>
+          </div>
+
+          <!-- Body -->
+          <div class="card-body p-5">
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+              <div class="mb-4">
+                <label class="form-label fw-semibold text-dark">Email Address</label>
+                <input type="email" class="form-control form-control-lg" formControlName="email"
+                       placeholder="you@example.com" autofocus>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold text-dark">Password</label>
+                <input type="password" class="form-control form-control-lg" formControlName="password"
+                       placeholder="••••••••">
+              </div>
+
+              <button type="submit" [disabled]="loginForm.invalid || loading"
+                      class="btn btn-success btn-lg w-100 mb-3 fw-bold">
+                <span *ngIf="!loading">Login with Password</span>
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                <span *ngIf="loading">Signing in...</span>
+              </button>
+
+              <div class="text-center my-4">
+                <small class="text-muted">— or —</small>
+              </div>
+
+              <button type="button" (click)="loginWithOtp()"
+                      class="btn btn-outline-success btn-lg w-100">
+                <i class="bi bi-envelope-fill me-2"></i>
+                Login with OTP (No Password)
+              </button>
+            </form>
+
+            <div class="text-center mt-4">
+              <p class="mb-0 text-muted">
+                New here?
+                <a routerLink="/auth/register" class="text-success fw-bold text-decoration-none">
+                  Create an account →
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

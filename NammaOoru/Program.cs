@@ -8,25 +8,25 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
+// ==================== Add Services ===F=================
 
-// Add OpenAPI/Swagger
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Swagger + JWT Support
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Moodly API",
+        Title = "NammaOoru API",
         Version = "v1",
-        Description = "Secure login with Email and OTP verification"
+        Description = "Civic Issue Reporting Platform with Email + OTP Login"
     });
 
-    // Add JWT Bearer Authentication to Swagger
     var securityScheme = new OpenApiSecurityScheme
     {
         Name = "JWT Authentication",
-        Description = "Enter the JWT token",
+        Description = "Enter JWT token (from /api/auth/login or /api/auth/verify-otp)",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
@@ -37,40 +37,38 @@ builder.Services.AddSwaggerGen(c =>
             Type = ReferenceType.SecurityScheme
         }
     };
-
     c.AddSecurityDefinition("Bearer", securityScheme);
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         { securityScheme, new[] { "Bearer" } }
     });
 
-    // Support multipart/form-data file uploads in Swagger
+    // Support file uploads in Swagger
     c.OperationFilter<NammaOoru.Swagger.FormFileOperationFilter>();
 
-    // Enable XML comments
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    // XML Comments (optional)
+    var xmlFile = "NammaOoru.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        c.IncludeXmlComments(xmlPath);
-    }
+    if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
 });
 
-// Add Database Context
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                       ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlServer(connectionString);
-    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-});
+    options.UseSqlServer(connectionString));
 
+// Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
-builder.Services.AddScoped<IAuthService,AuthService>();
-// Note: IReportService registration is postponed until we verify type resolution in service layer
-// Add Authentication
+// JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey is not configured");
-var key = Encoding.ASCII.GetBytes(secretKey);
+var secretKey = jwtSettings["SecretKey"] 
+                ?? throw new InvalidOperationException("JWT SecretKey is missing in appsettings.json");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -82,7 +80,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey)),
         ValidateIssuer = true,
         ValidIssuer = jwtSettings["Issuer"],
         ValidateAudience = true,
@@ -92,125 +90,82 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Add Authorization
 builder.Services.AddAuthorization();
 
-// Add CORS
+// ==================== CORS (CRITICAL FOR FRONTEND) ====================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policy.WithOrigins(
+                "http://localhost:4200",           // Angular dev
+                "https://nammaooru.vercel.app",    // Your live frontend
+                "https://nammaooru.in"             // Add your domain later
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
-// Add Custom Services
-builder.Services.AddScoped<IOtpService, OtpService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
-// Enable Swagger and Swagger UI unconditionally for local testing.
-// In production you might want to restrict this to Development only.
+// ==================== Middleware Pipeline ====================
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Moodly API v1");
-    c.RoutePrefix = string.Empty; // Serve at root
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "NammaOoru API v1");
+    c.RoutePrefix = string.Empty; // Go to https://localhost:5077/swagger
 });
 
-// Serve static files from wwwroot (uploads will be available under /uploads)
-app.UseStaticFiles();
+app.UseStaticFiles(); // For /uploads/images
 
 app.UseHttpsRedirection();
 
-// Apply CORS
-app.UseCors("AllowAll");
+// CORS MUST BE BEFORE Auth
+app.UseCors("AllowFrontend");
 
-// Add Authentication & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Apply database migrations
+// ==================== Auto-create DB & Tables (First Run) ====================
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
     try
     {
-        logger.LogInformation("Checking database schema...");
-        
-        // Check if Users table exists
-        var connection = dbContext.Database.GetDbConnection();
-        await connection.OpenAsync();
-        
-        using (var command = connection.CreateCommand())
+        logger.LogInformation("Setting up database...");
+        await db.Database.MigrateAsync(); // Applies EF migrations if any
+
+        // If no tables exist, create them manually (fallback)
+        if (!await db.Database.CanConnectAsync())
         {
-            command.CommandText = @"
-                SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
-                WHERE TABLE_NAME = 'Users' AND TABLE_SCHEMA = 'dbo'";
-            var result = await command.ExecuteScalarAsync();
-            
-            if (result != null && (int)result == 0)
-            {
-                logger.LogInformation("Users table does not exist. Creating tables...");
-                
-                // Create tables manually
-                command.CommandText = @"
+            logger.LogWarning("Database not accessible. Creating tables manually...");
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Users')
+                BEGIN
                     CREATE TABLE [Users] (
                         [Id] INT PRIMARY KEY IDENTITY(1,1),
                         [Email] NVARCHAR(255) NOT NULL UNIQUE,
                         [FirstName] NVARCHAR(100) NOT NULL,
                         [LastName] NVARCHAR(100) NOT NULL,
-                        [PasswordHash] NVARCHAR(MAX) NOT NULL,
+                        [PasswordHash] NVARCHAR(MAX),
                         [IsEmailVerified] BIT NOT NULL DEFAULT 0,
                         [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-                        [UpdatedAt] DATETIME2 NULL,
-                        [IsActive] BIT NOT NULL DEFAULT 1
+                        [Role] NVARCHAR(50) DEFAULT 'Citizen'
                     );
-                    
-                    CREATE TABLE [OtpVerifications] (
-                        [Id] INT PRIMARY KEY IDENTITY(1,1),
-                        [UserId] INT NOT NULL,
-                        [OtpCode] NVARCHAR(6) NOT NULL,
-                        [ExpiresAt] DATETIME2 NOT NULL,
-                        [IsUsed] BIT NOT NULL DEFAULT 0,
-                        [Email] NVARCHAR(255) NOT NULL,
-                        [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-                        CONSTRAINT [FK_OtpVerifications_Users] FOREIGN KEY ([UserId]) REFERENCES [Users]([Id]) ON DELETE CASCADE
-                    );
-                    
-                    CREATE INDEX [IX_OtpVerifications_UserId] ON [OtpVerifications]([UserId]);
-                    CREATE UNIQUE INDEX [IX_Users_Email] ON [Users]([Email]);
-                    
-                    IF NOT EXISTS (SELECT * FROM [__EFMigrationsHistory] WHERE [MigrationId] = '20251113000000_InitialCreate')
-                    BEGIN
-                        INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-                        VALUES ('20251113000000_InitialCreate', '9.0.0');
-                    END
-                ";
-                await command.ExecuteNonQueryAsync();
-                logger.LogInformation("Tables created successfully!");
-            }
-            else
-            {
-                logger.LogInformation("Users table already exists.");
-            }
+                END");
+            logger.LogInformation("Database ready!");
         }
-        
-        await connection.CloseAsync();
     }
     catch (Exception ex)
     {
-        var setupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        setupLogger.LogError($"An error occurred while setting up the database: {ex.Message}");
-        setupLogger.LogError($"Stack trace: {ex.StackTrace}");
+        logger.LogError(ex, "Database setup failed");
     }
 }
 

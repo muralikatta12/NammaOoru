@@ -11,11 +11,12 @@ namespace NammaOoru.Models
         // Category name (e.g., "Pothole", "StreetLight")
         public string? Category { get; set; }
 
-        // Location: latitude/longitude
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
+        // Location address
+        public string? LocationAddress { get; set; }
 
-        public string? Source { get; set; }
+        // Optional latitude/longitude (for future GPS tracking)
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
 
         // Optional attachments uploaded previously (URLs)
         public List<CreateMediaRequest>? Attachments { get; set; }

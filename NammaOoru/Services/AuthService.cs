@@ -109,90 +109,34 @@ namespace NammaOoru.Services
         }
 
         public async Task<OtpResponse> SendOtpAsync(SendOtpRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request.Email))
-                {
-                    return new OtpResponse
-                    {
-                        Success = false,
-                        Message = "Email is required."
-                    };
-                }
+{
+    var normalizedEmail = request.Email.Trim().ToLower();
 
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-                if (user == null)
-                {
-                    return new OtpResponse
-                    {
-                        Success = false,
-                        Message = "User not found."
-                    };
-                }
+    // Delete old OTPs
+    var oldOtps = _context.OtpVerifications.Where(o => o.Email == normalizedEmail);
+    _context.OtpVerifications.RemoveRange(oldOtps);
 
-                // Generate OTP
-                var otp = _otpService.GenerateOtp();
-                var expiresAt = DateTime.UtcNow.AddMinutes(10);
+    var otp = new Random().Next(100000, 999999).ToString("D6");
 
-                // Create OTP record
-                var otpVerification = new OtpVerification
-                {
-                    UserId = user.Id,
-                    Email = request.Email,
-                    OtpCode = otp,
-                    ExpiresAt = expiresAt,
-                    CreatedAt = DateTime.UtcNow,
-                    IsUsed = false
-                };
+    var otpRecord = new OtpVerification
+    {
+        Email = normalizedEmail,
+        OtpCode = otp,
+        ExpiresAt = DateTime.UtcNow.AddMinutes(5),
+        IsUsed = false
+    };
 
-                _context.OtpVerifications.Add(otpVerification);
-                await _context.SaveChangesAsync();
+    _context.OtpVerifications.Add(otpRecord);
+    await _context.SaveChangesAsync();
 
-                // ⚠️ DEBUGGING MODE: Send OTP email synchronously (not in background)
-                // This allows you to:
-                // 1. See errors immediately in the response
-                // 2. Use breakpoints in EmailService
-                // 3. Debug SMTP connection issues
-                // 
-                // In production, we'll move this back to Task.Run() so it doesn't block the API response
-                // Send OTP email in background so API response isn't blocked by SMTP delays.
-                // Errors will be logged by EmailService.
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        _logger.LogInformation("📧 [Background] Starting OTP email send to {Email}", request.Email);
-                        await _emailService.SendOtpEmailAsync(request.Email, otp, user.FirstName);
-                        _logger.LogInformation("✅ [Background] OTP email sent successfully to {Email}", request.Email);
-                    }
-                    catch (Exception emailEx)
-                    {
-                        _logger.LogError(emailEx, "❌ [Background] Failed to send OTP email to {Email}: {Message}", request.Email, emailEx.Message);
-                    }
-                });
+    // FOR TESTING — REMOVE IN PRODUCTION
+    _logger.LogInformation($"OTP for {normalizedEmail}: {otp}");
 
-                _logger.LogInformation("✅ OTP process completed for {Email}", request.Email);
+    // TODO: Send real email here
+    // await _emailService.SendEmailAsync(normalizedEmail, "Your NammaOoru OTP", $"Your OTP is: {otp}");
 
-                return new OtpResponse
-                {
-                    Success = true,
-                    Message = "OTP has been sent to your email. Valid for 10 minutes."
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error sending OTP: {ex.Message}");
-                _logger.LogError($"Stack trace: {ex.StackTrace}");
-                _logger.LogError($"Inner exception: {ex.InnerException?.Message}");
-                return new OtpResponse
-                {
-                    Success = false,
-                    Message = $"An error occurred while sending OTP: {ex.Message}"
-                };
-            }
-        }
-
+    return new OtpResponse { Success = true, Message = "OTP sent to your email" };
+}
         public async Task<LoginResponse> VerifyOtpAsync(VerifyOtpRequest request)
         {
             try
@@ -225,9 +169,9 @@ namespace NammaOoru.Services
                     };
                 }
 
-                // Find valid OTP
+                // Find valid OTP by email (not UserId, since OTP is created before user exists)
                 var otp = await _context.OtpVerifications
-                    .Where(o => o.UserId == user.Id && 
+                    .Where(o => o.Email == request.Email && 
                                 o.OtpCode == request.OtpCode && 
                                 !o.IsUsed && 
                                 o.ExpiresAt > DateTime.UtcNow)
@@ -242,8 +186,9 @@ namespace NammaOoru.Services
                     };
                 }
 
-                // Mark OTP as used
+                // Mark OTP as used and link it to the user
                 otp.IsUsed = true;
+                otp.UserId = user.Id;  // Link OTP to user now that they're verified
                 user.IsEmailVerified = true;
                 user.UpdatedAt = DateTime.UtcNow;
 

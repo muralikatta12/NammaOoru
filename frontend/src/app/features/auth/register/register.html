@@ -1,0 +1,60 @@
+<div class="min-vh-100 d-flex align-items-center" style="background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow-lg" style="border-radius: 1.5rem;">
+          <!-- Header -->
+          <div class="card-header text-center py-5" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <h2 class="text-white mb-0 fw-bold">
+              <i class="bi bi-person-plus-fill me-3"></i>
+              Join NammaOoru
+            </h2>
+            <p class="text-white opacity-90 mt-2">Help make Bengaluru better</p>
+          </div>
+
+          <!-- Body -->
+          <div class="card-body p-5">
+            <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <input type="text" class="form-control form-control-lg"
+                         formControlName="firstName" placeholder="First Name">
+                </div>
+                <div class="col-md-6">
+                  <input type="text" class="form-control form-control-lg"
+                         formControlName="lastName" placeholder="Last Name">
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <input type="email" class="form-control form-control-lg"
+                       formControlName="email" placeholder="Email Address">
+              </div>
+
+              <div class="mt-3">
+                <input type="password" class="form-control form-control-lg"
+                       formControlName="password" placeholder="Create Password (min 6 chars)">
+              </div>
+
+              <button type="submit" [disabled]="registerForm.invalid || loading"
+                      class="btn btn-warning btn-lg w-100 mt-4 text-white fw-bold">
+                <span *ngIf="!loading">Register & Send OTP</span>
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                <span *ngIf="loading">Creating account...</span>
+              </button>
+            </form>
+
+            <div class="text-center mt-4">
+              <p class="mb-0 text-muted">
+                Already have an account?
+                <a routerLink="/auth/login" class="text-warning fw-bold text-decoration-none">
+                  Login here →
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

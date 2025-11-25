@@ -49,7 +49,7 @@ namespace NammaOoru.Data
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.OtpVerifications)
                     .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.SetNull);  // Set to null when user is deleted
             });
 
             // ====== Report configuration ======
@@ -100,6 +100,12 @@ namespace NammaOoru.Data
                     .WithMany(u => u.AssignedReports)
                     .HasForeignKey(e => e.AssignedToUserId)
                     .OnDelete(DeleteBehavior.SetNull);
+
+                // UpdatedByUser relationship (optional) - use NoAction to avoid cascade path conflicts
+                entity.HasOne(e => e.UpdatedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.UpdatedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // Indexes for common queries
                 entity.HasIndex(e => e.Status);

@@ -59,7 +59,7 @@ namespace NammaOoru.Controllers
                 Title = req.Title,
                 Description = req.Description,
                 Category = req.Category ?? "Other",
-                LocationAddress = req.Source,
+                LocationAddress = req.LocationAddress,
                 CreatedByUserId = userId,
                 CreatedAt = DateTime.UtcNow,
                 Status = ReportStatus.Submitted,
@@ -202,7 +202,7 @@ namespace NammaOoru.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Citizen,Moderator,Official,Admin")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetReports(
             [FromQuery] int? status = null,
             [FromQuery] string? category = null,

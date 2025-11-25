@@ -71,11 +71,12 @@ namespace NammaOoru.Controllers
             var result = await _authService.VerifyOtpAsync(request);
             if (!result.Success)
             {
-                return BadRequest(result);
+                return Unauthorized(result);
             }
 
             return Ok(result);
         }
+    
 
         /// <summary>
         /// Login with email and password
