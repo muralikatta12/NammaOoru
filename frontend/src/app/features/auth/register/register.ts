@@ -3,7 +3,6 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angula
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
-
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -49,10 +48,16 @@ export class RegisterComponent {
         });
       }
     },
-    error: () => {
-      alert('Registration failed');
-      this.loading = false;
-    }
+   // src/app/features/auth/register/register.component.ts
+error: (err: any) => {
+  const msg = err.error?.message || err.error?.error || 'Registration failed';
+  if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('exists') || msg.includes('duplicate')) {
+    alert('This email is already registered! Please login instead.');
+  } else {
+    alert(msg);
+  }
+  this.loading = false;
+}
   });
 }
 }

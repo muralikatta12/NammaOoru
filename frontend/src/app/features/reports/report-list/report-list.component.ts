@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+// src/app/features/reports/report-list/report-list.component.ts
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReportService } from '../../../core/services/report.service';
 import { ReportCardComponent } from '../components/report-card/report-card.component';
@@ -15,21 +16,35 @@ import { RouterLink } from '@angular/router';
 export class ReportListComponent implements OnInit {
   reports: Report[] = [];
   loading = true;
+  error = false;
 
   constructor(
     public authService: AuthService,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
+    this.loadReports();
+  }
+
+  loadReports() {
+    this.loading = true;
+    this.error = false;
+
     this.reportService.getReports().subscribe({
-      next: (data) => {
-        this.reports = data;
+      next: (reports) => {
+        this.reports = reports;
         this.loading = false;
+        console.log('All reports loaded:', reports.length);
+        this.cdr.detectChanges();
+
       },
-      error: () => {
-        alert('Failed to load reports');
+      error: (err) => {
+        console.error('Failed to load reports:', err);
+        this.error = true;
         this.loading = false;
+        alert('Failed to load reports. Please try again.');
       }
     });
   }

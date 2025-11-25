@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+// src/app/features/auth/verify-otp/verify-otp.component.ts
+import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,52 +10,64 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './verify-otp.html',
-  styleUrls: ['./verify-otp.css'] // optional
 })
 export class VerifyOtpComponent implements OnInit {
   email = '';
   loading = false;
 
-  // Fix: Declare fb first, then use it
-  private fb = new FormBuilder();
-  otpForm = this.fb.group({
+  // THIS IS THE FIX — inject FormBuilder directly in form definition
+  otpForm = inject(FormBuilder).group({
     otp: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]]
   });
 
   constructor(
-    private authService: AuthService,
+    private auth: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
-    // Get email from navigation state (passed from login/register)
-    const navigation = this.router.getCurrentNavigation();
-    this.email = (navigation?.extras?.state as any)?.email || 'your email';
+    this.email = history.state.email || '';
+    if (!this.email) {
+      alert('Session expired. Please login again.');
+      this.router.navigate(['/auth/login']);
+    }
   }
 
-  
-  verify() {
-  if (this.otpForm.invalid || this.loading) return;
+  onSubmit() {
+    if (this.otpForm.invalid) return alert('Enter valid 6-digit OTP');
 
-  this.loading = true;
-  const otpCode = this.otpForm.get('otp')!.value!.trim();
-  const email = this.email.trim().toLowerCase();  // ← CRITICAL: normalize
+    this.loading = true;
 
-  this.authService.verifyOtp(email, otpCode).subscribe({
-    next: (res) => {
-      if (res.success) {
-        this.router.navigate(['/dashboard']);
-      } else {
-        alert(res.message || 'Invalid OTP');
+    this.auth.verifyOtp(this.email, this.otpForm.value.otp!).subscribe({
+      next: (res) => {
+        if (!res.success) {
+          alert(res.message || 'Invalid OTP');
+          this.loading = false;
+          return;
+        }
+
+        // MARK USER AS VERIFIED — badge turns green instantly!
+        const user = this.auth.getCurrentUser();
+        if (user) {
+          user.isVerified = true;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        alert('Verification failed');
         this.loading = false;
       }
-    },
-    error: (err) => {
-      const msg = err.error?.message || err.message || 'Server error';
-      alert('OTP Verification Failed: ' + msg);
-      this.loading = false;
-    }
-  });
+    });
+  }
 
-}
+  resendOtp() {
+    this.loading = true;
+    this.auth.sendOtp(this.email).subscribe({
+      next: () => alert('New OTP sent!'),
+      error: () => alert('Failed to resend'),
+      complete: () => this.loading = false
+    });
+  }
 }

@@ -9,22 +9,28 @@ import { Router } from '@angular/router';
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './header.html',  // ← MUST BE .component.html
+  templateUrl: './header.html',  // FIXED: .component.html
   styles: [`
     .navbar-brand {
-      font-weight: 900;
+      font-weight: 900 !important;
       letter-spacing: 1px;
-    }
-    .btn-sm {
-      font-size: 0.85rem;
     }
   `]
 })
 export class HeaderComponent {
   constructor(
-    public authService: AuthService, 
+    public authService: AuthService,
     private router: Router
   ) {}
+
+  // THIS IS THE CORRECT WAY — CHECK isVerified FIELD
+  get isVerified(): boolean {
+    return this.authService.getCurrentUser()?.isVerified === true;
+  }
+
+  get userName(): string {
+    return this.authService.getCurrentUser()?.firstName || 'Citizen';
+  }
 
   logout() {
     this.authService.logout();

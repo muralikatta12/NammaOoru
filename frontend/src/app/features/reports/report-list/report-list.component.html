@@ -1,24 +1,22 @@
 <div class="container py-5">
-  <div class="d-flex justify-content-between align-items-center mb-5">
-    <div>
-      <h1 class="display-5 fw-bold text-success mb-2">Civic Reports</h1>
-      <p class="text-muted">Help make our city better – report and track issues</p>
-    </div>
-    <a routerLink="/reports/new" class="btn btn-success btn-lg shadow">
-      <i class="bi bi-plus-circle-fill me-2"></i>New Report
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-5 fw-bold">All Reports</h1>
+    <a routerLink="/reports/new" class="btn btn-success btn-lg">
+      New Report
     </a>
   </div>
 
   <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-success" style="width: 4rem; height: 4rem;"></div>
+    <div class="spinner-border text-success" style="width: 3rem; height: 3rem;"></div>
+    <p class="mt-3">Loading reports...</p>
   </div>
 
   <div *ngIf="!loading && reports.length === 0" class="text-center py-5">
-    <i class="bi bi-inbox display-1 text-muted"></i>
-    <h3 class="mt-3 text-muted">No reports yet</h3>
+    <h3>No reports found</h3>
+    <p>Be the first to report a problem!</p>
   </div>
 
-  <div class="row g-4">
+  <div class="row g-4" *ngIf="!loading && reports.length > 0">
     <div class="col-md-6 col-lg-4" *ngFor="let report of reports">
       <app-report-card [report]="report"></app-report-card>
     </div>

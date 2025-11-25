@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/layout/header/header';
 import { DarkModeToggleComponent } from './components/ui/dark-mode-toggle/dark-mode-toggle';
 import { DashboardComponent } from './features/dashboard/dashboard/dashboard.component';
+import { ReportDetailComponent } from './features/reports/report-detail/report-detail.component';
 
 @Component({
   selector: 'app-root',

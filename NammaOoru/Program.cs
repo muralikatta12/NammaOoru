@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using NammaOoru.Data;
 using NammaOoru.Services;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
+// Add services
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; // ← THIS LINE FIXES EVERYTHING
+    });
 // Swagger + JWT Support
 builder.Services.AddSwaggerGen(c =>
 {

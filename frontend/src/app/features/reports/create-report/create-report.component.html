@@ -1,43 +1,79 @@
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-lg-8">
-      <div class="card shadow-lg border-0">
+      <div class="card border-0 shadow-lg rounded-4">
         <div class="card-header bg-success text-white text-center py-4">
-          <h2 class="mb-0"><i class="bi bi-megaphone me-2"></i>Report a Problem</h2>
+          <h2 class="mb-0 fw-bold">Report a Problem in Bengaluru</h2>
         </div>
         <div class="card-body p-5">
-          <form [formGroup]="form" (ngSubmit)="submit()">
-            <div class="row g-4">
-              <div class="col-12">
-                <input class="form-control form-control-lg" formControlName="title" placeholder="Title (e.g., Pothole on MG Road)">
-              </div>
-              <div class="col-12">
-                <textarea class="form-control" rows="5" formControlName="description" placeholder="Describe the issue..."></textarea>
-              </div>
-              <div class="col-md-6">
-                <select class="form-select form-select-lg" formControlName="category">
-                  <option value="">Select Category</option>
-                  <option>Pothole</option>
-                  <option>Garbage</option>
-                  <option>Street Light</option>
-                  <option>Water Leak</option>
-                  <option>Drainage</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <input class="form-control form-control-lg" formControlName="locationAddress" placeholder="Exact location">
-              </div>
-              <div class="col-12">
-                <input type="file" multiple accept="image/*" class="form-control" (change)="onFilesSelected($event)">
-                <small class="text-muted">You can add photos after creating the report too</small>
-              </div>
-              <div class="col-12 text-center">
-                <button type="submit" class="btn btn-success btn-lg px-5" [disabled]="uploading || form.invalid">
-                  <span *ngIf="!uploading">Submit Report</span>
-                  <span *ngIf="uploading">Submitting...</span>
-                </button>
-              </div>
+
+          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <!-- Title -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Title <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-lg" formControlName="title"
+                     placeholder="e.g. Huge pothole on MG Road">
+            </div>
+
+            <!-- Category -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+              <select class="form-select form-select-lg" formControlName="category">
+                <option>Pothole</option>
+                <option>Garbage</option>
+                <option>Street Light Not Working</option>
+                <option>Water Leakage</option>
+                <option>Broken Footpath</option>
+                <option>Illegal Parking</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <!-- Location -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Location Address <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-lg" formControlName="locationAddress"
+                     placeholder="e.g. Near Marathahalli Bridge, Bengaluru">
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Description (Optional)</label>
+              <textarea class="form-control" rows="5" formControlName="description"
+                        placeholder="Describe the issue in detail..."></textarea>
+            </div>
+
+            <!-- Photo Upload -->
+           <div class="mb-4">
+  <label class="form-label fw-bold">Add Photos (up to 10) <span class="text-success">(Multiple allowed)</span></label>
+  <input type="file" class="form-control form-control-lg" 
+         multiple accept="image/*" (change)="onFileSelect($event)">
+  <small class="text-muted">You selected <strong>{{ photos.length }}</strong> photo(s)</small>
+</div>
+
+            <!-- Photo Previews -->
+            <div class="row g-3 mb-4" *ngIf="photoPreviews.length > 0">
+  <div class="col-4 col-md-3" *ngFor="let preview of photoPreviews; let i = index">
+    <div class="position-relative rounded-3 overflow-hidden shadow">
+      <img [src]="preview" class="w-100" style="height: 150px; object-fit: cover;">
+      <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+              (click)="removePhoto(i)">X</button>
+    </div>
+  </div>
+</div>
+            <!-- Buttons -->
+            <div class="d-flex gap-3 justify-content-center mt-5">
+              <button type="submit" class="btn btn-success btn-lg px-5"
+                      [disabled]="loading || form.invalid">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                {{ loading ? 'Submitting...' : 'Submit Report' }}
+              </button>
+
+              <button type="button" class="btn btn-outline-secondary btn-lg px-5"
+                      (click)="router.navigate(['/reports'])"
+                      [disabled]="loading">
+                Cancel
+              </button>
             </div>
           </form>
         </div>

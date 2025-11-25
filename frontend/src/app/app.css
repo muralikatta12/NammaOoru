@@ -1,0 +1,8 @@
+.dark-mode .text-muted,
+.dark-mode .card-text,
+.dark-mode p {
+  color: #e0e0e0 !important;
+}
+.dark-mode .lead {
+  color: #f0f0f0 !important;
+}

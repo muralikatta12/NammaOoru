@@ -6,7 +6,7 @@ using NammaOoru.Services;
 namespace NammaOoru.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

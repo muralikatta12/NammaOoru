@@ -1,31 +1,69 @@
-<nav class="navbar navbar-expand-lg shadow-sm sticky-top" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 1000;">
+<nav class="navbar navbar-expand-lg shadow-sm sticky-top" 
+     style="background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); z-index: 1000;">
   <div class="container">
     <!-- Logo -->
     <a class="navbar-brand fw-bold fs-2" routerLink="/">
       <span class="text-success">Namma</span><span class="text-warning">Ooru</span>
     </a>
 
-    <!-- Right Side Buttons -->
+    <!-- Right Side -->
     <div class="d-flex gap-3 align-items-center">
+
       <!-- LOGGED IN USER -->
       <ng-container *ngIf="authService.isLoggedIn(); else guestButtons">
-        <span class="text-dark fw-semibold d-none d-md-block">
-          Hi, {{ authService.getCurrentUser()?.firstName }}!
-        </span>
-        <button class="btn btn-outline-danger btn-sm" (click)="logout()">
-          <i class="bi bi-box-arrow-right me-1"></i> Logout
+
+        <!-- User Greeting + Verified Badge -->
+        <div class="d-flex align-items-center gap-3">
+
+          <!-- Name -->
+          <span class="text-dark fw-semibold d-none d-md-block">
+            Hi, {{ authService.getCurrentUser()?.firstName }}!
+          </span>
+
+          <!-- Verified Badge (Beautiful & Professional) -->
+          <div class="d-flex align-items-center gap-1"
+               [title]="authService.getCurrentUser()?.isVerified ? 'Email verified' : 'Verify your email to get verified badge'">
+            
+            <i class="bi"
+               [class.bi-patch-check-fill]="authService.getCurrentUser()?.isVerified"
+               [class.bi-patch-exclamation-fill]="!authService.getCurrentUser()?.isVerified"
+               [class.text-success]="authService.getCurrentUser()?.isVerified"
+               [class.text-warning]="!authService.getCurrentUser()?.isVerified"
+               style="font-size: 1.4rem;">
+            </i>
+
+            <span class="badge rounded-pill fw-medium"
+                  [class.bg-success]="authService.getCurrentUser()?.isVerified"
+                  [class.bg-warning]="!authService.getCurrentUser()?.isVerified"
+                  [class.text-white]="authService.getCurrentUser()?.isVerified"
+                  [class.text-dark]="!authService.getCurrentUser()?.isVerified">
+              {{ authService.getCurrentUser()?.isVerified ? 'Verified' : 'Unverified' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Logout Button -->
+        <button class="btn btn-outline-danger btn-sm px-3" (click)="logout()">
+          <i class="bi bi-box-arrow-right me-1"></i>
+          <span class="d-none d-sm-inline">Logout</span>
         </button>
+
       </ng-container>
 
       <!-- GUEST USER -->
       <ng-template #guestButtons>
-        <a routerLink="/auth/login" class="btn btn-outline-success btn-sm">
-          <i class="bi bi-box-arrow-in-right me-1"></i> Login
+        <a routerLink="/auth/login" class="btn btn-outline-success btn-sm px-4">
+          <i class="bi bi-box-arrow-in-right me-1"></i>
+          <span class="d-none d-sm-inline">Login</span>
+          <span class="d-sm-none">Login</span>
         </a>
-        <a routerLink="/auth/register" class="btn btn-success btn-sm">
-          <i class="bi bi-person-plus-fill me-1"></i> Register
+        <a routerLink="/auth/register" class="btn btn-success btn-sm px-4">
+          <i class="bi bi-person-plus-fill me-1"></i>
+          <span class="d-none d-sm-inline">Register</span>
+          <span class="d-sm-none">Join</span>
         </a>
       </ng-template>
+
     </div>
   </div>
 </nav>

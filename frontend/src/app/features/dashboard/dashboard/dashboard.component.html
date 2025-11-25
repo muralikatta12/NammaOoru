@@ -1,129 +1,95 @@
-<div class="container py-5">
-  <!-- Header + Create Button -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="display-5 fw-bold text-success mb-0">NammaOoru Dashboard</h1>
-    <a routerLink="/reports/new" class="btn btn-success btn-lg shadow">
-      <i class="bi bi-plus-circle-fill me-2"></i> Create New Report
-    </a>
+<div class="container-fluid py-5 px-4">
+
+  <!-- Hero Title -->
+  <div class="text-center mb-5">
+    <h1 class="display-4 fw-bold text-success">NammaOoru Dashboard</h1>
+    <p class="lead text-muted">Making Bengaluru cleaner, safer, better — together</p>
   </div>
 
-  <!-- Navigation Tabs -->
-  <div class="mb-5">
-    <div class="btn-group w-100 shadow-sm" role="group">
-      <a routerLink="/dashboard" routerLinkActive="active" 
-         class="btn btn-outline-success btn-lg rounded-start">Dashboard</a>
-      <a routerLink="/reports" routerLinkActive="active" 
-         class="btn btn-outline-success btn-lg rounded-end">All Reports</a>
-    </div>
-  </div>
-
-  <!-- Stats Cards -->
+  <!-- 4 STUNNING CARDS -->
   <div class="row g-4 mb-5">
-    <div class="col-md-3">
-      <div class="card stat-card text-white border-0 shadow-lg rounded-4">
-        <div class="card-body text-center py-5">
-          <i class="bi bi-file-earmark-text display-1 mb-3"></i>
+    <div class="col-lg-3 col-md-6">
+      <div class="card border-0 shadow-lg rounded-4 text-white h-100" 
+           style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">
+        <div class="card-body text-center p-5">
+          <i class="bi bi-file-earmark-text fs-1 mb-3"></i>
           <h2 class="display-5 fw-bold">{{ stats.total }}</h2>
-          <p class="fs-5 mb-0">Total Reports</p>
+          <p class="fs-4 mb-0 opacity-90">Total Reports</p>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card text-white border-0 shadow-lg rounded-4" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-        <div class="card-body text-center py-5">
-          <i class="bi bi-hourglass-split display-1 mb-3"></i>
+
+    <div class="col-lg-3 col-md-6">
+      <div class="card border-0 shadow-lg rounded-4 text-white h-100" 
+           style="background: linear-gradient(135deg, #f97316, #fb923c);">
+        <div class="card-body text-center p-5">
+          <i class="bi bi-clock-history fs-1 mb-3"></i>
           <h2 class="display-5 fw-bold">{{ stats.submitted }}</h2>
-          <p class="fs-5 mb-0">Submitted</p>
+          <p class="fs-4 mb-0 opacity-90">Pending</p>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card text-white border-0 shadow-lg rounded-4" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-        <div class="card-body text-center py-5">
-          <i class="bi bi-tools display-1 mb-3"></i>
+
+    <div class="col-lg-3 col-md-6">
+      <div class="card border-0 shadow-lg rounded-4 text-white h-100" 
+           style="background: linear-gradient(135deg, #7c3aed, #a78bfa);">
+        <div class="card-body text-center p-5">
+          <i class="bi bi-tools fs-1 mb-3"></i>
           <h2 class="display-5 fw-bold">{{ stats.inProgress }}</h2>
-          <p class="fs-5 mb-0">In Progress</p>
+          <p class="fs-4 mb-0 opacity-90">In Progress</p>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card text-white border-0 shadow-lg rounded-4" style="background: linear-gradient(135deg, #10b981, #059669);">
-        <div class="card-body text-center py-5">
-          <i class="bi bi-check2-circle display-1 mb-3"></i>
+
+    <div class="col-lg-3 col-md-6">
+      <div class="card border-0 shadow-lg rounded-4 text-white h-100" 
+           style="background: linear-gradient(135deg, #16a34a, #22c55e);">
+        <div class="card-body text-center p-5">
+          <i class="bi bi-check2-circle fs-1 mb-3"></i>
           <h2 class="display-5 fw-bold">{{ stats.resolved }}</h2>
-          <p class="fs-5 mb-0">Resolved</p>
+          <p class="fs-4 mb-0 opacity-90">Resolved</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Progress Bar -->
-  <div class="row mb-5">
-    <div class="col-lg-8 mx-auto">
-      <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-body p-5">
-          <h4 class="fw-bold mb-4">Overall Resolution Progress</h4>
-          <div class="d-flex justify-content-between mb-2">
-            <span class="fs-5">Resolved Reports</span>
-            <strong class="fs-5">{{ stats.resolved }} / {{ stats.total }}</strong>
-          </div>
-          <div class="progress bg-light" style="height: 35px; border-radius: 20px;">
-            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                 [style.width.%]="getProgress(2)"
-                 style="border-radius: 20px;">
-              <span class="fw-bold">{{ getProgress(2) | number:'1.0-0' }}%</span>
-            </div>
-          </div>
-        </div>
+  <!-- Success Rate + Motivation -->
+  <div class="row g-5 mb-5">
+    <div class="col-md-6">
+      <div class="card border-0 shadow rounded-4 bg-light text-center p-5">
+        <h1 class="display-3 fw-bold text-success">{{ successRate }}%</h1>
+        <p class="fs-3 text-muted">Issues Resolved</p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-0 shadow rounded-4 text-white p-5 text-center"
+           style="background: linear-gradient(45deg, #10b981, #34d399);">
+        <h3 class="fw-bold mb-3">Bengaluru is Getting Better</h3>
+        <p class="lead">Because citizens like you care</p>
       </div>
     </div>
   </div>
 
-  <!-- Category + Recent Reports -->
-  <div class="row">
-    <div class="col-lg-6 mb-4">
-      <div class="card shadow-lg border-0 rounded-4 h-100">
-        <div class="card-body p-4">
-          <h4 class="fw-bold mb-4">Reports by Category</h4>
-          <div *ngFor="let cat of categoryStats" class="d-flex align-items-center mb-3">
-            <div class="rounded-circle me-3" [style.background-color]="cat.color" style="width:40px;height:40px;"></div>
-            <div class="flex-grow-1">
-              <div class="d-flex justify-content-between">
-                <span class="fw-semibold">{{ cat.name }}</span>
-                <strong>{{ cat.count }}</strong>
-              </div>
-              <div class="progress mt-1" style="height: 8px;">
-                <div class="progress-bar" [style.background-color]="cat.color"
-                     [style.width.%]="(cat.count / stats.total) * 100"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- QUICK ACTION BUTTONS — CLEAN & DIRECT -->
+  <div class="text-center py-5">
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-5">
+        <a routerLink="/create-report" 
+           class="btn btn-success btn-lg w-100 py-4 rounded-pill shadow-lg fw-bold fs-4">
+          Report New Issue
+        </a>
+      </div>
+      <div class="col-md-5">
+        <a routerLink="/reports" 
+           class="btn btn-outline-success btn-lg w-100 py-4 rounded-pill shadow-lg fw-bold fs-4">
+          View All Reports
+        </a>
       </div>
     </div>
+  </div>
 
-    <div class="col-lg-6">
-      <div class="card shadow-lg border-0 rounded-4 h-100">
-        <div class="card-body p-4">
-          <h4 class="fw-bold mb-4">Recent Reports</h4>
-          <div *ngFor="let r of recentReports" class="d-flex mb-3 pb-3 border-bottom">
-            <img [src]="'https://localhost:5077' + (r.photos[0]?.photoUrl || '/assets/placeholder.jpg')"
-                 class="rounded me-3" width="60" height="60" style="object-fit: cover;">
-            <div class="flex-grow-1">
-              <h6 class="mb-1">{{ r.title }}</h6>
-              <small class="text-muted">{{ r.locationAddress }}</small>
-            </div>
-            <span class="badge fs-6" [ngClass]="{
-              'bg-warning text-dark': r.status === 0,
-              'bg-info text-white': r.status === 1,
-              'bg-success text-white': r.status === 2,
-              'bg-secondary text-white': r.status === 3
-            }">
-              {{ ['Submitted','In Progress','Resolved','Closed'][r.status] }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+  <!-- Optional: Small Footer Note -->
+  <div class="text-center mt-5 text-muted">
+    <p class="mb-0">NammaOoru — Built with love for Bengaluru</p>
   </div>
 </div>
