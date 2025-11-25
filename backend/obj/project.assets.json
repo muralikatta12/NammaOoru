@@ -5107,11 +5107,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Murali Katta\\Desktop\\NammooruProject\\NammaOoru\\NammaOoru.csproj",
+      "projectUniqueName": "C:\\Users\\Murali Katta\\Desktop\\NammooruProject\\backend\\NammaOoru.csproj",
       "projectName": "NammaOoru",
-      "projectPath": "C:\\Users\\Murali Katta\\Desktop\\NammooruProject\\NammaOoru\\NammaOoru.csproj",
+      "projectPath": "C:\\Users\\Murali Katta\\Desktop\\NammooruProject\\backend\\NammaOoru.csproj",
       "packagesPath": "C:\\Users\\Murali Katta\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Murali Katta\\Desktop\\NammooruProject\\NammaOoru\\obj\\",
+      "outputPath": "C:\\Users\\Murali Katta\\Desktop\\NammooruProject\\backend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

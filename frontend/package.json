@@ -2,8 +2,11 @@
   "name": "frontend",
   "version": "0.0.0",
   "scripts": {
-  "start": "ng serve --proxy-config proxy.conf.json --open --ssl false",
-  "build": "ng build"
+  "start": "ng serve --open",
+  "build": "ng build",
+  "test": "ng test",
+  "watch": "ng build --watch --configuration development"
+
 },
   "prettier": {
     "printWidth": 100,
